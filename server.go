@@ -3,6 +3,7 @@ package chipmunk
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -29,19 +30,8 @@ var (
 )
 
 var Version string = "dev"
-
 var start time.Time
-
-type userInfo struct {
-	Sub           string `json:"sub"`
-	Name          string `json:"name"`
-	GivenName     string `json:"given_name"`
-	FamilyName    string `json:"family_name"`
-	Profile       string `json:"profile"`
-	Picture       string `json:"picture"`
-	Email         string `json:"email"`
-	EmailVerified bool   `json:"email_verified"`
-}
+var users []user
 
 type failure struct {
 	Success bool   `json:"success"`
@@ -113,72 +103,134 @@ func (s *Server) oauthCallback(w http.ResponseWriter, r *http.Request) {
 	u := userInfo{}
 	err = json.Unmarshal(data, &u)
 	if err != nil {
-		log.Printf("failed to unmarshal userinfo: '%s'\n", err)
-		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+		b, _ := json.Marshal(NewFailure(err.Error()))
+		http.Error(w, string(b), http.StatusInternalServerError)
 		return
 	}
 
-	session, _ := store.Get(r, "creds")
-	session.Values["authenticated"] = true
-	session.Values["uname"] = u.Email
-	if err := session.Save(r, w); err != nil {
-		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+	if authorizedEmail(u.Email) {
+		session, _ := store.Get(r, "creds")
+		session.Values["authenticated"] = true
+		session.Values["uname"] = u.Email
+		if err := session.Save(r, w); err != nil {
+			http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+		}
+		addUser(u)
+		http.Redirect(w, r, "/static/", http.StatusTemporaryRedirect)
+		return
 	}
-	http.Redirect(w, r, "/static/", http.StatusTemporaryRedirect)
+	b, _ := json.Marshal(NewFailure("Not a authorized user"))
+	http.Error(w, string(b), http.StatusForbidden)
+	return
+}
+
+func (s *Server) fakeSetup(w http.ResponseWriter, r *http.Request) {
+	u := userInfo{
+		Email: "derekmcquay@gmail.com",
+	}
+	addUser(u)
+}
+
+func (s *Server) tranx(w http.ResponseWriter, r *http.Request) {
+	//TODO add back in oauth
+	//w.Header().Set("Content-Type", "application/json")
+	//session, _ := store.Get(r, "creds")
+	//if loggedIn := session.Values["authenticated"]; loggedIn != true {
+	//	http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+	//	return
+	//}
+	switch r.Method {
+	default:
+		b, _ := json.Marshal(NewFailure("Allowed method: GET"))
+		http.Error(w, string(b), http.StatusBadRequest)
+		return
+	case "GET":
+		u, err := getUser("derekmcquay@gmail.com")
+		if err != nil {
+			b, _ := json.Marshal(NewFailure(err.Error()))
+			http.Error(w, string(b), http.StatusInternalServerError)
+			return
+		}
+		u.addTranx(
+			tranx{
+				Cost:  1.99,
+				Store: "target",
+				Info:  "just because",
+			},
+		)
+	}
+}
+
+func (s *Server) listUsers(w http.ResponseWriter, r *http.Request) {
+	//TODO add back in oauth
+	//w.Header().Set("Content-Type", "application/json")
+	//session, _ := store.Get(r, "creds")
+	//if loggedIn := session.Values["authenticated"]; loggedIn != true {
+	//	http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+	//	return
+	//}
+	switch r.Method {
+	default:
+		b, _ := json.Marshal(NewFailure("Allowed method: GET"))
+		http.Error(w, string(b), http.StatusBadRequest)
+		return
+	case "GET":
+		j, _ := json.Marshal(users)
+		fmt.Fprintf(w, string(j))
+	}
 }
 
 func (s *Server) list(w http.ResponseWriter, r *http.Request) {
-	return
-	//	w.Header().Set("Content-Type", "application/json")
-	//	session, _ := store.Get(r, "creds")
-	//	if loggedIn := session.Values["authenticated"]; loggedIn != true {
-	//		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
-	//		return
-	//	}
-	//	switch r.Method {
-	//	default:
-	//		b, _ := json.Marshal(NewFailure("Allowed method: GET"))
+	//w.Header().Set("Content-Type", "application/json")
+	//session, _ := store.Get(r, "creds")
+	//if loggedIn := session.Values["authenticated"]; loggedIn != true {
+	//	http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+	//	return
+	//}
+	//switch r.Method {
+	//default:
+	//	b, _ := json.Marshal(NewFailure("Allowed method: POST"))
+	//	http.Error(w, string(b), http.StatusBadRequest)
+	//	return
+	//case "POST":
+	//	searchreq := r.URL.Path[len(prefix["list"]):]
+	//	if len(searchreq) == 0 {
+	//		b, _ := json.Marshal(NewFailure("url could not be parsed"))
 	//		http.Error(w, string(b), http.StatusBadRequest)
 	//		return
-	//	case "GET":
-	//		searchreq := r.URL.Path[len(prefix["list"]):]
-	//		if len(searchreq) == 0 {
-	//			b, _ := json.Marshal(NewFailure("url could not be parsed"))
-	//			http.Error(w, string(b), http.StatusBadRequest)
-	//			return
-	//		}
-	//		if searchreq[len(searchreq)-1] != '/' {
-	//			http.Redirect(w, r, prefix["list"]+searchreq+"/", http.StatusMovedPermanently)
-	//			return
-	//		}
-	//		searchReqParsed := strings.Split(searchreq, "/")
-	//		client := github.NewClient(nil)
-	//		if s.ApiToken != "" {
-	//			ts := oauth2.StaticTokenSource(
-	//				&oauth2.Token{AccessToken: s.ApiToken},
-	//			)
-	//			tc := oauth2.NewClient(oauth2.NoContext, ts)
-	//			client = github.NewClient(tc)
-	//		}
-	//		opt := &github.RepositoryListOptions{}
-	//		repos, _, err := client.Repositories.List(searchReqParsed[0], opt)
-	//		if err != nil {
-	//			b, _ := json.Marshal(NewFailure("user could not be found"))
-	//			http.Error(w, string(b), http.StatusBadRequest)
-	//			return
-	//		}
-	//		var items []Item
-	//		for _, i := range repos {
-	//			items = append(items, Item{*i.Name, *i.StargazersCount})
-	//		}
-	//
-	//		err = json.NewEncoder(w).Encode(items)
-	//		if err != nil {
-	//			b, _ := json.Marshal(NewFailure(err.Error()))
-	//			http.Error(w, string(b), http.StatusInternalServerError)
-	//			return
-	//		}
 	//	}
+	//	if searchreq[len(searchreq)-1] != '/' {
+	//		http.Redirect(w, r, prefix["list"]+searchreq+"/", http.StatusMovedPermanently)
+	//		return
+	//	}
+	//	searchReqParsed := strings.Split(searchreq, "/")
+	//	client := github.NewClient(nil)
+	//	if s.ApiToken != "" {
+	//		ts := oauth2.StaticTokenSource(
+	//			&oauth2.Token{AccessToken: s.ApiToken},
+	//		)
+	//		tc := oauth2.NewClient(oauth2.NoContext, ts)
+	//		client = github.NewClient(tc)
+	//	}
+	//	opt := &github.RepositoryListOptions{}
+	//	repos, _, err := client.Repositories.List(searchReqParsed[0], opt)
+	//	if err != nil {
+	//		b, _ := json.Marshal(NewFailure("user could not be found"))
+	//		http.Error(w, string(b), http.StatusBadRequest)
+	//		return
+	//	}
+	//	var items []Item
+	//	for _, i := range repos {
+	//		items = append(items, Item{*i.Name, *i.StargazersCount})
+	//	}
+
+	//	err = json.NewEncoder(w).Encode(items)
+	//	if err != nil {
+	//		b, _ := json.Marshal(NewFailure(err.Error()))
+	//		http.Error(w, string(b), http.StatusInternalServerError)
+	//		return
+	//	}
+	//}
 }
 
 func (s *Server) auth(w http.ResponseWriter, r *http.Request) {

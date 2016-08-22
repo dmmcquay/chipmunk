@@ -19,10 +19,12 @@ func addRoutes(sm *http.ServeMux, server *Server, staticFiles string) {
 		"protected": "/static/",
 		"login":     "/api/v0/login/",
 		"logout":    "/api/v0/logout/",
-		"list":      "/api/v0/list/",
 		"oauth":     "/api/v0/oauth_cb/",
 		"auth":      "/api/v0/auth/",
 		"health":    "/healthz",
+		"list":      "/api/v0/list/",
+		"tranx":     "/api/v0/tranx/",
+		"fake":      "/fake/",
 	}
 
 	if staticFiles == "" {
@@ -69,8 +71,10 @@ func addRoutes(sm *http.ServeMux, server *Server, staticFiles string) {
 	sm.HandleFunc(prefix["info"], server.serverInfo)
 	sm.HandleFunc(prefix["login"], server.login)
 	sm.HandleFunc(prefix["logout"], server.logout)
-	sm.HandleFunc(prefix["list"], server.list)
 	sm.HandleFunc(prefix["oauth"], server.oauthCallback)
 	sm.HandleFunc(prefix["auth"], server.auth)
 	sm.HandleFunc(prefix["health"], server.health)
+	sm.HandleFunc(prefix["list"], server.listUsers)
+	sm.HandleFunc(prefix["tranx"], server.tranx)
+	sm.HandleFunc(prefix["fake"], server.fakeSetup)
 }
