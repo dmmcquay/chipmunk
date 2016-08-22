@@ -32,6 +32,17 @@ var Version string = "dev"
 
 var start time.Time
 
+type userInfo struct {
+	Sub           string `json:"sub"`
+	Name          string `json:"name"`
+	GivenName     string `json:"given_name"`
+	FamilyName    string `json:"family_name"`
+	Profile       string `json:"profile"`
+	Picture       string `json:"picture"`
+	Email         string `json:"email"`
+	EmailVerified bool   `json:"email_verified"`
+}
+
 type failure struct {
 	Success bool   `json:"success"`
 	Error   string `json:"error"`
@@ -47,7 +58,6 @@ func NewFailure(msg string) *failure {
 type Server struct {
 	ClientID     string
 	ClientSecret string
-	ApiToken     string
 	CookieSecret string
 }
 
@@ -56,11 +66,10 @@ func init() {
 	start = time.Now()
 }
 
-func NewServer(sm *http.ServeMux, clientId, clientSecret, apiToken, cookieSecret, static string) *Server {
+func NewServer(sm *http.ServeMux, clientId, clientSecret, cookieSecret, static string) *Server {
 	server := &Server{
 		ClientID:     clientId,
 		ClientSecret: clientSecret,
-		ApiToken:     apiToken,
 		CookieSecret: cookieSecret,
 	}
 	addRoutes(sm, server, static)
@@ -94,17 +103,24 @@ func (s *Server) oauthCallback(w http.ResponseWriter, r *http.Request) {
 
 	email, err := oauthClient.Get("https://www.googleapis.com/oauth2/v3/userinfo")
 	if err != nil {
-		log.Printf("client.Users.Get() failed with '%s'\n", err)
+		log.Printf("failed with getting userinfo: '%s'\n", err)
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 		return
 	}
+
 	defer email.Body.Close()
 	data, _ := ioutil.ReadAll(email.Body)
-	log.Println("Email body: ", string(data))
+	u := userInfo{}
+	err = json.Unmarshal(data, &u)
+	if err != nil {
+		log.Printf("failed to unmarshal userinfo: '%s'\n", err)
+		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+		return
+	}
 
 	session, _ := store.Get(r, "creds")
 	session.Values["authenticated"] = true
-	session.Values["uname"] = string(data)
+	session.Values["uname"] = u.Email
 	if err := session.Save(r, w); err != nil {
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 	}

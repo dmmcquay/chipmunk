@@ -21,7 +21,6 @@ type Config struct {
 	Port         int
 	ClientID     string
 	ClientSecret string
-	ApiToken     string
 	CookieSecret string
 }
 
@@ -30,7 +29,7 @@ func init() {
 }
 
 func main() {
-	var host, clientId, clientSecret, apiToken, cookieSecret string
+	var host, clientId, clientSecret, cookieSecret string
 	var port int
 
 	var run = &cobra.Command{
@@ -59,9 +58,6 @@ func main() {
 			if clientSecret != "" {
 				config.ClientSecret = clientSecret
 			}
-			if apiToken != "" {
-				config.ApiToken = apiToken
-			}
 			if cookieSecret != "" {
 				config.CookieSecret = cookieSecret
 			} else {
@@ -88,7 +84,6 @@ func main() {
 				sm,
 				config.ClientID,
 				config.ClientSecret,
-				config.ApiToken,
 				config.CookieSecret,
 				"",
 			)
@@ -145,13 +140,6 @@ func main() {
 		"c",
 		"",
 		"cookieSecret",
-	)
-	run.Flags().StringVarP(
-		&apiToken,
-		"apitoken",
-		"a",
-		"",
-		"github apitoken",
 	)
 
 	var rootCmd = &cobra.Command{Use: "app"}
