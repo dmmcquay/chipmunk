@@ -6,7 +6,9 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"math/rand"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gorilla/sessions"
@@ -25,7 +27,7 @@ var (
 		Scopes:       []string{"https://www.googleapis.com/auth/userinfo.email"},
 		Endpoint:     google.Endpoint,
 	}
-	oauthStateString = "thisshouldberandom"
+	oauthStateString = strconv.Itoa(rand.Int())
 )
 
 var Version string = "dev"
