@@ -49,7 +49,7 @@ func main() {
 				config.Port = port
 			} else {
 				if config.Port == 0 {
-					config.Port = 8000
+					config.Port = 8080
 				}
 			}
 			if clientId != "" {
