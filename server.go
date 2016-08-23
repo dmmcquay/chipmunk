@@ -3,7 +3,6 @@ package chipmunk
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -141,21 +140,42 @@ func (s *Server) tranx(w http.ResponseWriter, r *http.Request) {
 	//}
 	switch r.Method {
 	default:
-		b, _ := json.Marshal(NewFailure("Allowed method: GET"))
+		b, _ := json.Marshal(NewFailure("Allowed method: POST"))
 		http.Error(w, string(b), http.StatusBadRequest)
 		return
 	case "GET":
-		u, err := getUser("derekmcquay@gmail.com")
+		u, err := getUser("derekmcquay@gmail.com") //TODO will grab this from session
 		if err != nil {
 			b, _ := json.Marshal(NewFailure(err.Error()))
 			http.Error(w, string(b), http.StatusInternalServerError)
 			return
 		}
-		u.addTranx(
+		json.NewEncoder(w).Encode(users[u].txs)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	case "POST":
+		u, err := getUser("derekmcquay@gmail.com") //TODO will grab this from session
+		if err != nil {
+			b, _ := json.Marshal(NewFailure(err.Error()))
+			http.Error(w, string(b), http.StatusInternalServerError)
+			return
+		}
+
+		t := tranx{}
+		err = json.NewDecoder(r.Body).Decode(&t)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		defer r.Body.Close()
+
+		users[u].addTranx(
 			tranx{
-				Cost:  1.99,
-				Store: "target",
-				Info:  "just because",
+				Cost:  t.Cost,
+				Store: t.Store,
+				Info:  t.Info,
 			},
 		)
 	}
@@ -175,62 +195,12 @@ func (s *Server) listUsers(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, string(b), http.StatusBadRequest)
 		return
 	case "GET":
-		j, _ := json.Marshal(users)
-		fmt.Fprintf(w, string(j))
+		err := json.NewEncoder(w).Encode(users)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
-}
-
-func (s *Server) list(w http.ResponseWriter, r *http.Request) {
-	//w.Header().Set("Content-Type", "application/json")
-	//session, _ := store.Get(r, "creds")
-	//if loggedIn := session.Values["authenticated"]; loggedIn != true {
-	//	http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
-	//	return
-	//}
-	//switch r.Method {
-	//default:
-	//	b, _ := json.Marshal(NewFailure("Allowed method: POST"))
-	//	http.Error(w, string(b), http.StatusBadRequest)
-	//	return
-	//case "POST":
-	//	searchreq := r.URL.Path[len(prefix["list"]):]
-	//	if len(searchreq) == 0 {
-	//		b, _ := json.Marshal(NewFailure("url could not be parsed"))
-	//		http.Error(w, string(b), http.StatusBadRequest)
-	//		return
-	//	}
-	//	if searchreq[len(searchreq)-1] != '/' {
-	//		http.Redirect(w, r, prefix["list"]+searchreq+"/", http.StatusMovedPermanently)
-	//		return
-	//	}
-	//	searchReqParsed := strings.Split(searchreq, "/")
-	//	client := github.NewClient(nil)
-	//	if s.ApiToken != "" {
-	//		ts := oauth2.StaticTokenSource(
-	//			&oauth2.Token{AccessToken: s.ApiToken},
-	//		)
-	//		tc := oauth2.NewClient(oauth2.NoContext, ts)
-	//		client = github.NewClient(tc)
-	//	}
-	//	opt := &github.RepositoryListOptions{}
-	//	repos, _, err := client.Repositories.List(searchReqParsed[0], opt)
-	//	if err != nil {
-	//		b, _ := json.Marshal(NewFailure("user could not be found"))
-	//		http.Error(w, string(b), http.StatusBadRequest)
-	//		return
-	//	}
-	//	var items []Item
-	//	for _, i := range repos {
-	//		items = append(items, Item{*i.Name, *i.StargazersCount})
-	//	}
-
-	//	err = json.NewEncoder(w).Encode(items)
-	//	if err != nil {
-	//		b, _ := json.Marshal(NewFailure(err.Error()))
-	//		http.Error(w, string(b), http.StatusInternalServerError)
-	//		return
-	//	}
-	//}
 }
 
 func (s *Server) auth(w http.ResponseWriter, r *http.Request) {

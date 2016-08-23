@@ -35,13 +35,15 @@ func authorizedEmail(e string) bool {
 	return b
 }
 
-func getUser(e string) (*user, error) {
-	for _, i := range users {
-		if e == i.Info.Email {
-			return &i, nil
+// getUser returns index of user with given email, otherwise it returns an
+// error that it could not find that user
+func getUser(e string) (int, error) {
+	for i, u := range users {
+		if e == u.Info.Email {
+			return i, nil
 		}
 	}
-	return &user{}, fmt.Errorf("could not find user")
+	return 0, fmt.Errorf("could not find user")
 }
 
 func addUser(u userInfo) {
