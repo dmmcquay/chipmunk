@@ -117,7 +117,7 @@ func (s *Server) tranx(w http.ResponseWriter, r *http.Request) {
 		}
 		defer r.Body.Close()
 
-		users[u].addTranx(
+		users[u].txs = append(users[u].txs,
 			tranx{
 				Cost:  t.Cost,
 				Store: t.Store,
@@ -125,6 +125,47 @@ func (s *Server) tranx(w http.ResponseWriter, r *http.Request) {
 				Month: t.Month,
 			},
 		)
+	}
+}
+
+func (s *Server) costPerMonth(w http.ResponseWriter, r *http.Request) {
+	//TODO add back in oauth
+	//w.Header().Set("Content-Type", "application/json")
+	//session, _ := store.Get(r, "creds")
+	//if err != nil {
+	//	http.Error(w, err.Error(), http.StatusInternalServerError)
+	//	return
+	//}
+	//if loggedIn := session.Values["authenticated"]; loggedIn != true {
+	//	http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+	//	return
+	//}
+	switch r.Method {
+	default:
+		b, _ := json.Marshal(NewFailure("Allowed method: GET"))
+		http.Error(w, string(b), http.StatusBadRequest)
+		return
+	case "GET":
+		u, err := getUser("derekmcquay@gmail.com") //TODO will grab this from session
+		if err != nil {
+			b, _ := json.Marshal(NewFailure(err.Error()))
+			http.Error(w, string(b), http.StatusInternalServerError)
+			return
+		}
+		monthCost := make(map[time.Month]float32)
+		for _, t := range users[u].txs {
+			c, ok := monthCost[t.Month]
+			if !ok {
+				monthCost[t.Month] = t.Cost
+				continue
+			}
+			monthCost[t.Month] = t.Cost + c
+		}
+		err = json.NewEncoder(w).Encode(monthCost)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 }
 
