@@ -21,10 +21,7 @@ type userInfo struct {
 	EmailVerified bool   `json:"email_verified"`
 }
 
-func (u *user) addTranx(t tranx) {
-	u.txs = append(u.txs, t)
-}
-
+//authorizedEmail checks whether the email coming in is in the preapproved list
 func authorizedEmail(e string) bool {
 	b := false
 	for _, i := range authEmails {
@@ -46,6 +43,7 @@ func getUser(e string) (int, error) {
 	return 0, fmt.Errorf("could not find user")
 }
 
+//addUser adds user to slice of users
 func addUser(u userInfo) {
 	_, err := getUser(u.Email)
 	if err != nil {
