@@ -122,6 +122,7 @@ func (s *Server) tranx(w http.ResponseWriter, r *http.Request) {
 				Cost:  t.Cost,
 				Store: t.Store,
 				Info:  t.Info,
+				Month: t.Month,
 			},
 		)
 	}
