@@ -65,64 +65,6 @@ func NewServer(sm *http.ServeMux, clientId, clientSecret, cookieSecret, static s
 	return server
 }
 
-func (s *Server) login(w http.ResponseWriter, r *http.Request) {
-	oauthConf.ClientID = s.ClientID
-	oauthConf.ClientSecret = s.ClientSecret
-	url := oauthConf.AuthCodeURL(oauthStateString, oauth2.AccessTypeOnline)
-	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
-}
-
-func (s *Server) oauthCallback(w http.ResponseWriter, r *http.Request) {
-	state := r.FormValue("state")
-	if state != oauthStateString {
-		log.Printf("invalid oauth state, expected '%s', got '%s'\n", oauthStateString, state)
-		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
-		return
-	}
-
-	code := r.FormValue("code")
-	token, err := oauthConf.Exchange(oauth2.NoContext, code)
-	if err != nil {
-		log.Printf("oauthConf.Exchange() failed with '%s'\n", err)
-		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
-		return
-	}
-
-	oauthClient := oauthConf.Client(oauth2.NoContext, token)
-
-	email, err := oauthClient.Get("https://www.googleapis.com/oauth2/v3/userinfo")
-	if err != nil {
-		log.Printf("failed with getting userinfo: '%s'\n", err)
-		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
-		return
-	}
-
-	defer email.Body.Close()
-	data, _ := ioutil.ReadAll(email.Body)
-	u := userInfo{}
-	err = json.Unmarshal(data, &u)
-	if err != nil {
-		b, _ := json.Marshal(NewFailure(err.Error()))
-		http.Error(w, string(b), http.StatusInternalServerError)
-		return
-	}
-
-	if authorizedEmail(u.Email) {
-		session, _ := store.Get(r, "creds")
-		session.Values["authenticated"] = true
-		session.Values["uname"] = u.Email
-		if err := session.Save(r, w); err != nil {
-			http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
-		}
-		addUser(u)
-		http.Redirect(w, r, "/static/", http.StatusTemporaryRedirect)
-		return
-	}
-	b, _ := json.Marshal(NewFailure("Not a authorized user"))
-	http.Error(w, string(b), http.StatusForbidden)
-	return
-}
-
 func (s *Server) fakeSetup(w http.ResponseWriter, r *http.Request) {
 	u := userInfo{
 		Email: "derekmcquay@gmail.com",
@@ -134,6 +76,10 @@ func (s *Server) tranx(w http.ResponseWriter, r *http.Request) {
 	//TODO add back in oauth
 	//w.Header().Set("Content-Type", "application/json")
 	//session, _ := store.Get(r, "creds")
+	//if err != nil {
+	//	http.Error(w, err.Error(), http.StatusInternalServerError)
+	//	return
+	//}
 	//if loggedIn := session.Values["authenticated"]; loggedIn != true {
 	//	http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 	//	return
@@ -185,6 +131,10 @@ func (s *Server) listUsers(w http.ResponseWriter, r *http.Request) {
 	//TODO add back in oauth
 	//w.Header().Set("Content-Type", "application/json")
 	//session, _ := store.Get(r, "creds")
+	//if err != nil {
+	//	http.Error(w, err.Error(), http.StatusInternalServerError)
+	//	return
+	//}
 	//if loggedIn := session.Values["authenticated"]; loggedIn != true {
 	//	http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 	//	return
@@ -203,6 +153,68 @@ func (s *Server) listUsers(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (s *Server) login(w http.ResponseWriter, r *http.Request) {
+	oauthConf.ClientID = s.ClientID
+	oauthConf.ClientSecret = s.ClientSecret
+	url := oauthConf.AuthCodeURL(oauthStateString, oauth2.AccessTypeOnline)
+	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
+}
+
+func (s *Server) oauthCallback(w http.ResponseWriter, r *http.Request) {
+	state := r.FormValue("state")
+	if state != oauthStateString {
+		log.Printf("invalid oauth state, expected '%s', got '%s'\n", oauthStateString, state)
+		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+		return
+	}
+
+	code := r.FormValue("code")
+	token, err := oauthConf.Exchange(oauth2.NoContext, code)
+	if err != nil {
+		log.Printf("oauthConf.Exchange() failed with '%s'\n", err)
+		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+		return
+	}
+
+	oauthClient := oauthConf.Client(oauth2.NoContext, token)
+
+	email, err := oauthClient.Get("https://www.googleapis.com/oauth2/v3/userinfo")
+	if err != nil {
+		log.Printf("failed with getting userinfo: '%s'\n", err)
+		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+		return
+	}
+
+	defer email.Body.Close()
+	data, _ := ioutil.ReadAll(email.Body)
+	u := userInfo{}
+	err = json.Unmarshal(data, &u)
+	if err != nil {
+		b, _ := json.Marshal(NewFailure(err.Error()))
+		http.Error(w, string(b), http.StatusInternalServerError)
+		return
+	}
+
+	if authorizedEmail(u.Email) {
+		session, err := store.Get(r, "creds")
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		session.Values["authenticated"] = true
+		session.Values["uname"] = u.Email
+		if err := session.Save(r, w); err != nil {
+			http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+		}
+		addUser(u)
+		http.Redirect(w, r, "/static/", http.StatusTemporaryRedirect)
+		return
+	}
+	b, _ := json.Marshal(NewFailure("Not a authorized user"))
+	http.Error(w, string(b), http.StatusForbidden)
+	return
+}
+
 func (s *Server) auth(w http.ResponseWriter, r *http.Request) {
 	output := struct {
 		Auth bool `json:"auth"`
@@ -210,7 +222,11 @@ func (s *Server) auth(w http.ResponseWriter, r *http.Request) {
 		Auth: false,
 	}
 	w.Header().Set("Content-Type", "application/json")
-	session, _ := store.Get(r, "creds")
+	session, err := store.Get(r, "creds")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 	if loggedIn := session.Values["authenticated"]; loggedIn == true {
 		output.Auth = true
 		json.NewEncoder(w).Encode(output)
@@ -221,7 +237,11 @@ func (s *Server) auth(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) logout(w http.ResponseWriter, req *http.Request) {
-	session, _ := store.Get(req, "creds")
+	session, err := store.Get(req, "creds")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 	delete(session.Values, "authenticated")
 	delete(session.Values, "uname")
 	session.Save(req, w)
@@ -243,7 +263,11 @@ func (s *Server) serverInfo(w http.ResponseWriter, req *http.Request) {
 }
 
 func (s *Server) plist(w http.ResponseWriter, r *http.Request) {
-	session, _ := store.Get(r, "creds")
+	session, err := store.Get(r, "creds")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 	if loggedIn := session.Values["authenticated"]; loggedIn != true {
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 		return
