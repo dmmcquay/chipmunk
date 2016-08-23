@@ -47,11 +47,14 @@ func getUser(e string) (int, error) {
 }
 
 func addUser(u userInfo) {
-	users = append(
-		users,
-		user{
-			Info:  u,
-			admin: true,
-		},
-	)
+	_, err := getUser(u.Email)
+	if err != nil {
+		users = append(
+			users,
+			user{
+				Info:  u,
+				admin: true,
+			},
+		)
+	}
 }
