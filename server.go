@@ -77,7 +77,7 @@ func (s *Server) fakeSetup(w http.ResponseWriter, r *http.Request) {
 func (s *Server) tranx(w http.ResponseWriter, r *http.Request) {
 	//TODO add back in oauth
 	//w.Header().Set("Content-Type", "application/json")
-	//session, _ := store.Get(r, "creds")
+	//session, err := store.Get(r, "creds")
 	//if err != nil {
 	//	http.Error(w, err.Error(), http.StatusInternalServerError)
 	//	return
@@ -133,7 +133,7 @@ func (s *Server) tranx(w http.ResponseWriter, r *http.Request) {
 func (s *Server) costPerMonth(w http.ResponseWriter, r *http.Request) {
 	//TODO add back in oauth
 	//w.Header().Set("Content-Type", "application/json")
-	//session, _ := store.Get(r, "creds")
+	//session, err := store.Get(r, "creds")
 	//if err != nil {
 	//	http.Error(w, err.Error(), http.StatusInternalServerError)
 	//	return
@@ -174,7 +174,7 @@ func (s *Server) costPerMonth(w http.ResponseWriter, r *http.Request) {
 func (s *Server) listUsers(w http.ResponseWriter, r *http.Request) {
 	//TODO add back in oauth
 	//w.Header().Set("Content-Type", "application/json")
-	//session, _ := store.Get(r, "creds")
+	//session, err := store.Get(r, "creds")
 	//if err != nil {
 	//	http.Error(w, err.Error(), http.StatusInternalServerError)
 	//	return
@@ -228,7 +228,6 @@ func (s *Server) oauthCallback(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 		return
 	}
-
 	defer email.Body.Close()
 	data, _ := ioutil.ReadAll(email.Body)
 	u := userInfo{}
@@ -242,8 +241,10 @@ func (s *Server) oauthCallback(w http.ResponseWriter, r *http.Request) {
 	if authorizedEmail(u.Email) {
 		session, err := store.Get(r, "creds")
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
+			if !session.IsNew {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
 		}
 		session.Values["authenticated"] = true
 		session.Values["uname"] = u.Email
@@ -280,19 +281,19 @@ func (s *Server) auth(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, string(b), http.StatusUnauthorized)
 }
 
-func (s *Server) logout(w http.ResponseWriter, req *http.Request) {
-	session, err := store.Get(req, "creds")
+func (s *Server) logout(w http.ResponseWriter, r *http.Request) {
+	session, err := store.Get(r, "creds")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	delete(session.Values, "authenticated")
 	delete(session.Values, "uname")
-	session.Save(req, w)
-	http.Redirect(w, req, "/", http.StatusSeeOther)
+	session.Save(r, w)
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
-func (s *Server) serverInfo(w http.ResponseWriter, req *http.Request) {
+func (s *Server) serverInfo(w http.ResponseWriter, r *http.Request) {
 	output := struct {
 		Version string `json:"version"`
 		Start   string `json:"start"`
@@ -309,6 +310,10 @@ func (s *Server) serverInfo(w http.ResponseWriter, req *http.Request) {
 func (s *Server) plist(w http.ResponseWriter, r *http.Request) {
 	session, err := store.Get(r, "creds")
 	if err != nil {
+		if session.IsNew {
+			http.Redirect(w, r, "/", http.StatusSeeOther)
+			return
+		}
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

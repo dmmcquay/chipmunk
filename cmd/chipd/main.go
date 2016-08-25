@@ -12,6 +12,7 @@ import (
 
 	"s.mcquay.me/dm/chipmunk"
 
+	"github.com/gorilla/context"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/spf13/cobra"
 )
@@ -98,7 +99,7 @@ func main() {
 			log.Printf("serving at: http://%s:%d/", hostname, config.Port)
 
 			addr := fmt.Sprintf("%s:%d", config.Host, config.Port)
-			err = http.ListenAndServe(addr, sm)
+			err = http.ListenAndServe(addr, context.ClearHandler(sm))
 			if err != nil {
 				log.Printf("%+v", err)
 				os.Exit(1)
