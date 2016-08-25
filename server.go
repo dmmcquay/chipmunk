@@ -198,6 +198,11 @@ func (s *Server) listUsers(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) login(w http.ResponseWriter, r *http.Request) {
+	session, _ := store.Get(r, "creds")
+	if loggedIn := session.Values["authenticated"]; loggedIn == true {
+		http.Redirect(w, r, "/static/", http.StatusTemporaryRedirect)
+		return
+	}
 	oauthConf.ClientID = s.ClientID
 	oauthConf.ClientSecret = s.ClientSecret
 	url := oauthConf.AuthCodeURL(oauthStateString, oauth2.AccessTypeOnline)
