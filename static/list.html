@@ -13,6 +13,7 @@
 
     <!-- Bootstrap Core CSS -->
     <link href="/static/s/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/static/s/css/datepicker.min.css" rel="stylesheet">
 
     <!-- Custom CSS -->
     <style>
@@ -64,22 +65,27 @@
 
         <div class="row">
             <div class="col-lg-12 text-center">
-                <h1>Enter username</h1>
-                <span id="name-holder" class="input-group">
-                    <input type="text" class="form-control input-sm" id="name" placeholder="github username" autofocus>
+                <h1>Enter transaction</h1>
+                <span id="cost-holder" class="input-group">
+                    <input type="text" class="form-control input-sm" id="cost" placeholder="cost" autofocus>
                 </span>
-                <span id="name-holder" class="input-group">
-                    <button id="send" class="btn btn-default" type="button">        
-                        <span class="glyphicon glyphicon-send"></span> &nbsp; Submit
-                    </button>                                                       
+                <span id="vendor-holder" class="input-group">
+                    <input type="text" class="form-control input-sm" id="vendor" placeholder="vendor" autofocus>
                 </span>
-                <div class="col-sm-4 text-center">
-                    <div class="table-responsive">
-                        <table id="table" class="table">
-                        </table>
-                    </div>
-                </div>
+                <span id="info-holder" class="input-group">
+                    <input type="text" class="form-control input-sm" id="info" placeholder="info" autofocus>
+                </span>
+                <span class="input-append date" id="datepicker" data-date="02-2012" data-date-format="mm-yyyy">
+                    <input  type="text" readonly="readonly" name="date" >    
+                    <span class="add-on"><i class="icon-th"></i></span>
+                </span> 
+                    <span id="name-holder" class="input-group">
+                        <button id="send" class="btn btn-default" type="button">        
+                            <span class="glyphicon glyphicon-send"></span> &nbsp; Submit
+                        </button>                                                       
+                    </span>
             </div>
+
             <!-- /.row -->
 
         </div>
@@ -90,6 +96,7 @@
 
     <!-- Bootstrap Core JavaScript -->
     <script src="/static/s/js/bootstrap.min.js"></script>
+    <script src="/static/s/js/bootstrap-datepicker.min.js"></script>
     <script src="/static/s/js/starz.js"></script>
 
 </body>

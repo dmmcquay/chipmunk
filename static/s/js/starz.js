@@ -57,3 +57,9 @@ function send() {
         });
     }
 };
+
+$("#datepicker").datepicker( {
+    format: "mm-yyyy",
+    viewMode: "months", 
+    minViewMode: "months"
+});
