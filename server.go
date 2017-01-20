@@ -33,6 +33,7 @@ var (
 var Version string = "dev"
 var start time.Time
 var users []user
+var categories []category
 
 type failure struct {
 	Success bool   `json:"success"`
@@ -88,7 +89,7 @@ func (s *Server) tranx(w http.ResponseWriter, r *http.Request) {
 	//}
 	switch r.Method {
 	default:
-		b, _ := json.Marshal(NewFailure("Allowed method: POST"))
+		b, _ := json.Marshal(NewFailure("Allowed method: POST and GET"))
 		http.Error(w, string(b), http.StatusBadRequest)
 		return
 	case "GET":

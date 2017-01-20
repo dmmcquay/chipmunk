@@ -2,12 +2,11 @@ package chipmunk
 
 import "fmt"
 
-var authEmails []string = []string{"derekmcquay@gmail.com", "colleenmmcquay@gmail.com", "dmmllnl@gmail.com"}
+var authEmails []string = []string{"derekmcquay@gmail.com", "colleenmmcquay@gmail.com"}
 
 type user struct {
 	Info  userInfo `json:"info"`
 	admin bool     `json:"admin"`
-	txs   []tranx  `json:"Txs"`
 }
 
 type userInfo struct {
