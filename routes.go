@@ -68,16 +68,16 @@ func addRoutes(sm *http.ServeMux, server *Server, staticFiles string) {
 		)
 	}
 
-	store = sessions.NewCookieStore([]byte(server.CookieSecret))
+	store = sessions.NewCookieStore([]byte(server.cookieSecret))
+	//sm.HandleFunc(prefix["list"], server.listUsers)
+	//sm.HandleFunc(prefix["tranx"], server.tranx)
+	//sm.HandleFunc(prefix["cost"], server.costPerMonth)
 	sm.HandleFunc(prefix["protected"], server.plist)
 	sm.HandleFunc(prefix["info"], server.serverInfo)
 	sm.HandleFunc(prefix["login"], server.login)
 	sm.HandleFunc(prefix["logout"], server.logout)
 	sm.HandleFunc(prefix["oauth"], server.oauthCallback)
 	sm.HandleFunc(prefix["auth"], server.auth)
-	sm.HandleFunc(prefix["health"], server.health)
-	sm.HandleFunc(prefix["list"], server.listUsers)
-	sm.HandleFunc(prefix["tranx"], server.tranx)
-	sm.HandleFunc(prefix["cost"], server.costPerMonth)
 	sm.HandleFunc(prefix["fake"], server.fakeSetup)
+	sm.HandleFunc(prefix["health"], server.health)
 }

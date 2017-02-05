@@ -48,9 +48,10 @@ func NewFailure(msg string) *failure {
 }
 
 type Server struct {
-	ClientID     string
-	ClientSecret string
-	CookieSecret string
+	clientID     string
+	clientSecret string
+	cookieSecret string
+	db           *DB
 }
 
 func init() {
@@ -58,14 +59,21 @@ func init() {
 	start = time.Now()
 }
 
-func NewServer(sm *http.ServeMux, clientId, clientSecret, cookieSecret, static string) *Server {
+func NewServer(sm *http.ServeMux, clientId, clientSecret, cookieSecret, dbhost, dbname, static string) (*Server, error) {
+	db, err := NewDB(dbhost, dbname)
+	if err != nil {
+		return nil, err
+	}
+	db.db.SetMaxOpenConns(32)
+
 	server := &Server{
-		ClientID:     clientId,
-		ClientSecret: clientSecret,
-		CookieSecret: cookieSecret,
+		clientID:     clientId,
+		clientSecret: clientSecret,
+		cookieSecret: cookieSecret,
+		db:           db,
 	}
 	addRoutes(sm, server, static)
-	return server
+	return server, nil
 }
 
 func (s *Server) fakeSetup(w http.ResponseWriter, r *http.Request) {
@@ -75,137 +83,137 @@ func (s *Server) fakeSetup(w http.ResponseWriter, r *http.Request) {
 	addUser(u)
 }
 
-func (s *Server) tranx(w http.ResponseWriter, r *http.Request) {
-	//TODO add back in oauth
-	//w.Header().Set("Content-Type", "application/json")
-	//session, err := store.Get(r, "creds")
-	//if err != nil {
-	//	http.Error(w, err.Error(), http.StatusInternalServerError)
-	//	return
-	//}
-	//if loggedIn := session.Values["authenticated"]; loggedIn != true {
-	//	http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
-	//	return
-	//}
-	switch r.Method {
-	default:
-		b, _ := json.Marshal(NewFailure("Allowed method: POST and GET"))
-		http.Error(w, string(b), http.StatusBadRequest)
-		return
-	case "GET":
-		u, err := getUser("derekmcquay@gmail.com") //TODO will grab this from session
-		if err != nil {
-			b, _ := json.Marshal(NewFailure(err.Error()))
-			http.Error(w, string(b), http.StatusInternalServerError)
-			return
-		}
-		json.NewEncoder(w).Encode(users[u].txs)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-	case "POST":
-		u, err := getUser("derekmcquay@gmail.com") //TODO will grab this from session
-		if err != nil {
-			b, _ := json.Marshal(NewFailure(err.Error()))
-			http.Error(w, string(b), http.StatusInternalServerError)
-			return
-		}
-
-		t := tranx{}
-		err = json.NewDecoder(r.Body).Decode(&t)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-		defer r.Body.Close()
-
-		users[u].txs = append(users[u].txs,
-			tranx{
-				Cost:  t.Cost,
-				Store: t.Store,
-				Info:  t.Info,
-				Month: t.Month,
-			},
-		)
-	}
-}
-
-func (s *Server) costPerMonth(w http.ResponseWriter, r *http.Request) {
-	//TODO add back in oauth
-	//w.Header().Set("Content-Type", "application/json")
-	//session, err := store.Get(r, "creds")
-	//if err != nil {
-	//	http.Error(w, err.Error(), http.StatusInternalServerError)
-	//	return
-	//}
-	//if loggedIn := session.Values["authenticated"]; loggedIn != true {
-	//	http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
-	//	return
-	//}
-	switch r.Method {
-	default:
-		b, _ := json.Marshal(NewFailure("Allowed method: GET"))
-		http.Error(w, string(b), http.StatusBadRequest)
-		return
-	case "GET":
-		u, err := getUser("derekmcquay@gmail.com") //TODO will grab this from session
-		if err != nil {
-			b, _ := json.Marshal(NewFailure(err.Error()))
-			http.Error(w, string(b), http.StatusInternalServerError)
-			return
-		}
-		monthCost := make(map[time.Month]float32)
-		for _, t := range users[u].txs {
-			c, ok := monthCost[t.Month]
-			if !ok {
-				monthCost[t.Month] = t.Cost
-				continue
-			}
-			monthCost[t.Month] = t.Cost + c
-		}
-		err = json.NewEncoder(w).Encode(monthCost)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-	}
-}
-
-func (s *Server) listUsers(w http.ResponseWriter, r *http.Request) {
-	//TODO add back in oauth
-	//w.Header().Set("Content-Type", "application/json")
-	//session, err := store.Get(r, "creds")
-	//if err != nil {
-	//	http.Error(w, err.Error(), http.StatusInternalServerError)
-	//	return
-	//}
-	//if loggedIn := session.Values["authenticated"]; loggedIn != true {
-	//	http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
-	//	return
-	//}
-	switch r.Method {
-	default:
-		b, _ := json.Marshal(NewFailure("Allowed method: GET"))
-		http.Error(w, string(b), http.StatusBadRequest)
-		return
-	case "GET":
-		err := json.NewEncoder(w).Encode(users)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-	}
-}
-
+//func (s *Server) tranx(w http.ResponseWriter, r *http.Request) {
+//	//TODO add back in oauth
+//	//w.Header().Set("Content-Type", "application/json")
+//	//session, err := store.Get(r, "creds")
+//	//if err != nil {
+//	//	http.Error(w, err.Error(), http.StatusInternalServerError)
+//	//	return
+//	//}
+//	//if loggedIn := session.Values["authenticated"]; loggedIn != true {
+//	//	http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+//	//	return
+//	//}
+//	switch r.Method {
+//	default:
+//		b, _ := json.Marshal(NewFailure("Allowed method: POST and GET"))
+//		http.Error(w, string(b), http.StatusBadRequest)
+//		return
+//	case "GET":
+//		u, err := getUser("derekmcquay@gmail.com") //TODO will grab this from session
+//		if err != nil {
+//			b, _ := json.Marshal(NewFailure(err.Error()))
+//			http.Error(w, string(b), http.StatusInternalServerError)
+//			return
+//		}
+//		json.NewEncoder(w).Encode(users[u].txs)
+//		if err != nil {
+//			http.Error(w, err.Error(), http.StatusInternalServerError)
+//			return
+//		}
+//	case "POST":
+//		u, err := getUser("derekmcquay@gmail.com") //TODO will grab this from session
+//		if err != nil {
+//			b, _ := json.Marshal(NewFailure(err.Error()))
+//			http.Error(w, string(b), http.StatusInternalServerError)
+//			return
+//		}
+//
+//		t := tranx{}
+//		err = json.NewDecoder(r.Body).Decode(&t)
+//		if err != nil {
+//			http.Error(w, err.Error(), http.StatusBadRequest)
+//			return
+//		}
+//		defer r.Body.Close()
+//
+//		users[u].txs = append(users[u].txs,
+//			tranx{
+//				Cost:  t.Cost,
+//				Store: t.Store,
+//				Info:  t.Info,
+//				Month: t.Month,
+//			},
+//		)
+//	}
+//}
+//
+//func (s *Server) costPerMonth(w http.ResponseWriter, r *http.Request) {
+//	//TODO add back in oauth
+//	//w.Header().Set("Content-Type", "application/json")
+//	//session, err := store.Get(r, "creds")
+//	//if err != nil {
+//	//	http.Error(w, err.Error(), http.StatusInternalServerError)
+//	//	return
+//	//}
+//	//if loggedIn := session.Values["authenticated"]; loggedIn != true {
+//	//	http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+//	//	return
+//	//}
+//	switch r.Method {
+//	default:
+//		b, _ := json.Marshal(NewFailure("Allowed method: GET"))
+//		http.Error(w, string(b), http.StatusBadRequest)
+//		return
+//	case "GET":
+//		u, err := getUser("derekmcquay@gmail.com") //TODO will grab this from session
+//		if err != nil {
+//			b, _ := json.Marshal(NewFailure(err.Error()))
+//			http.Error(w, string(b), http.StatusInternalServerError)
+//			return
+//		}
+//		monthCost := make(map[time.Month]float32)
+//		for _, t := range users[u].txs {
+//			c, ok := monthCost[t.Month]
+//			if !ok {
+//				monthCost[t.Month] = t.Cost
+//				continue
+//			}
+//			monthCost[t.Month] = t.Cost + c
+//		}
+//		err = json.NewEncoder(w).Encode(monthCost)
+//		if err != nil {
+//			http.Error(w, err.Error(), http.StatusInternalServerError)
+//			return
+//		}
+//	}
+//}
+//
+//func (s *Server) listUsers(w http.ResponseWriter, r *http.Request) {
+//	//TODO add back in oauth
+//	//w.Header().Set("Content-Type", "application/json")
+//	//session, err := store.Get(r, "creds")
+//	//if err != nil {
+//	//	http.Error(w, err.Error(), http.StatusInternalServerError)
+//	//	return
+//	//}
+//	//if loggedIn := session.Values["authenticated"]; loggedIn != true {
+//	//	http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+//	//	return
+//	//}
+//	switch r.Method {
+//	default:
+//		b, _ := json.Marshal(NewFailure("Allowed method: GET"))
+//		http.Error(w, string(b), http.StatusBadRequest)
+//		return
+//	case "GET":
+//		err := json.NewEncoder(w).Encode(users)
+//		if err != nil {
+//			http.Error(w, err.Error(), http.StatusInternalServerError)
+//			return
+//		}
+//	}
+//}
+//
 func (s *Server) login(w http.ResponseWriter, r *http.Request) {
 	session, _ := store.Get(r, "creds")
 	if loggedIn := session.Values["authenticated"]; loggedIn == true {
 		http.Redirect(w, r, "/static/", http.StatusTemporaryRedirect)
 		return
 	}
-	oauthConf.ClientID = s.ClientID
-	oauthConf.ClientSecret = s.ClientSecret
+	oauthConf.ClientID = s.clientID
+	oauthConf.ClientSecret = s.clientSecret
 	url := oauthConf.AuthCodeURL(oauthStateString, oauth2.AccessTypeOnline)
 	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
 }

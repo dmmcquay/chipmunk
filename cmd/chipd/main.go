@@ -20,6 +20,8 @@ import (
 type Config struct {
 	Host         string
 	Port         int
+	DBHost       string
+	DBName       string
 	ClientID     string
 	ClientSecret string
 	CookieSecret string
@@ -38,7 +40,10 @@ func main() {
 		Short: "run command",
 		Long:  `run chipd with given options`,
 		Run: func(cmd *cobra.Command, args []string) {
-			config := &Config{}
+			config := &Config{
+				DBHost: "localhost",
+				DBName: "postgres",
+			}
 			err := envconfig.Process("chipd", config)
 			if err != nil {
 				log.Fatal(err)
@@ -81,13 +86,18 @@ func main() {
 			}()
 
 			sm := http.NewServeMux()
-			_ = chipmunk.NewServer(
+			_, err = chipmunk.NewServer(
 				sm,
 				config.ClientID,
 				config.ClientSecret,
 				config.CookieSecret,
+				config.DBHost,
+				config.DBName,
 				"",
 			)
+			if err != nil {
+				log.Fatalf("problem initializing Chipd server: %+v", err)
+			}
 
 			hostname := "localhost"
 			if config.Host == "" {
