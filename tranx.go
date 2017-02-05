@@ -3,6 +3,7 @@ package chipmunk
 import "time"
 
 type tranx struct {
+	ID          int        `json:"id"`
 	Cost        float64    `json:"cost"`
 	Store       string     `json:"store"`
 	Info        string     `json:"info"`
