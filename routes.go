@@ -69,7 +69,7 @@ func addRoutes(sm *http.ServeMux, server *Server, staticFiles string) {
 	}
 
 	store = sessions.NewCookieStore([]byte(server.cookieSecret))
-	//sm.HandleFunc(prefix["tranx"], server.tranx)
+	sm.HandleFunc(prefix["tranx"], server.tranx)
 	sm.HandleFunc(prefix["fake"], server.fakeSetup)
 	sm.HandleFunc(prefix["category"], server.category)
 	sm.HandleFunc(prefix["user"], server.user)

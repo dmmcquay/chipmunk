@@ -84,6 +84,23 @@ func (d *DB) adminUser(e string) bool {
 	return result.Admin
 }
 
+func (d *DB) getTranxs() ([]tranx, error) {
+	results := []tranx{}
+	rows, err := d.db.Queryx("SELECT * FROM tranx")
+	if err != nil {
+		return nil, err
+	}
+	for rows.Next() {
+		var result tranx
+		err := rows.StructScan(&result)
+		if err != nil {
+			return nil, err
+		}
+		results = append(results, result)
+	}
+	return results, nil
+}
+
 //func (d *DB) checkOwner(filename, client string) error {
 //	row := d.db.QueryRowx("SELECT client FROM pics WHERE filename = $1", filename)
 //	var owner string

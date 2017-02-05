@@ -2,8 +2,10 @@ package chipmunk
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
+	"time"
 )
 
 func (s *Server) category(w http.ResponseWriter, req *http.Request) {
@@ -167,6 +169,78 @@ func (s *Server) user(w http.ResponseWriter, req *http.Request) {
 		//}
 
 		_, err = s.db.db.Exec("DELETE FROM users WHERE email = $1", u.Email)
+		if err != nil {
+			log.Printf("%+v", err)
+			b, _ := json.Marshal(NewFailure(err.Error()))
+			http.Error(w, string(b), http.StatusInternalServerError)
+			return
+		}
+	}
+}
+
+func (s *Server) tranx(w http.ResponseWriter, req *http.Request) {
+	// TODO add back in
+	//w.Header().Set("Content-Type", "application/json")
+	//session, err := store.Get(r, "creds")
+	//if err != nil {
+	//	http.Error(w, err.Error(), http.StatusInternalServerError)
+	//	return
+	//}
+	//if loggedIn := session.Values["authenticated"]; loggedIn != true {
+	//	http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+	//	return
+	//}
+	switch req.Method {
+	default:
+		b, _ := json.Marshal(NewFailure("Allowed methods: GET, POST, DELETE"))
+		http.Error(w, string(b), http.StatusBadRequest)
+		return
+	case "GET":
+		tranxs, err := s.db.getTranxs()
+		if err != nil {
+			log.Printf("%+v", err)
+			b, _ := json.Marshal(NewFailure(err.Error()))
+			http.Error(w, string(b), http.StatusInternalServerError)
+			return
+		}
+		json.NewEncoder(w).Encode(tranxs)
+	case "POST":
+		t := tranx{}
+		err := json.NewDecoder(req.Body).Decode(&t)
+		req.Body.Close()
+		if err != nil {
+			log.Printf("%+v", err)
+			b, _ := json.Marshal(NewFailure(err.Error()))
+			http.Error(w, string(b), http.StatusBadRequest)
+			return
+		}
+		_, err = s.db.db.Exec(
+			`INSERT INTO tranx (cost, store, info, date, category_id, user_id) VALUES ($1, $2, $3, $4, $5, $6)`,
+			t.Cost,
+			t.Store,
+			t.Info,
+			time.Now(),
+			1,
+			1,
+		)
+		if err != nil {
+			log.Printf("%+v", err)
+			b, _ := json.Marshal(NewFailure(err.Error()))
+			http.Error(w, string(b), http.StatusInternalServerError)
+			return
+		}
+	case "DELETE":
+		t := tranx{}
+		err := json.NewDecoder(req.Body).Decode(&t)
+		req.Body.Close()
+		if err != nil {
+			b, _ := json.Marshal(NewFailure(err.Error()))
+			http.Error(w, string(b), http.StatusBadRequest)
+			return
+		}
+		fmt.Println(t)
+		// TODO need to find better way to delete tranx
+		_, err = s.db.db.Exec("DELETE FROM tranx WHERE store = $1 AND cost = $2", t.Store, t.Cost)
 		if err != nil {
 			log.Printf("%+v", err)
 			b, _ := json.Marshal(NewFailure(err.Error()))
