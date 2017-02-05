@@ -8,6 +8,6 @@ type tranx struct {
 	Store    string    `json:"store"`
 	Info     string    `json:"info"`
 	Date     time.Time `json:"date"`
-	User     int       `json:"user"`
-	Category int       `json:"category"`
+	User     string    `json:"user"`
+	Category string    `json:"category"`
 }
