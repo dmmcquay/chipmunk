@@ -54,6 +54,19 @@ func (d *DB) getCategories() ([]category, error) {
 	return results, nil
 }
 
+func (d *DB) getCategoryID(c string) (int, error) {
+	result := 0
+	row := d.db.QueryRow("SELECT id FROM categories WHERE name = $1",
+		c,
+	)
+	err := row.Scan(&result)
+	if err != nil {
+		return 0, err
+	}
+
+	return result, nil
+}
+
 func (d *DB) getUsers() ([]user, error) {
 	results := []user{}
 	rows, err := d.db.Queryx("SELECT id, email, admin FROM users")
@@ -69,6 +82,19 @@ func (d *DB) getUsers() ([]user, error) {
 		results = append(results, result)
 	}
 	return results, nil
+}
+
+func (d *DB) getUserID(u string) (int, error) {
+	result := 0
+	row := d.db.QueryRow("SELECT id FROM users WHERE email = $1",
+		u,
+	)
+	err := row.Scan(&result)
+	if err != nil {
+		return 0, err
+	}
+
+	return result, nil
 }
 
 func (d *DB) adminUser(e string) bool {

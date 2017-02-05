@@ -2,7 +2,6 @@ package chipmunk
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -214,14 +213,28 @@ func (s *Server) tranx(w http.ResponseWriter, req *http.Request) {
 			http.Error(w, string(b), http.StatusBadRequest)
 			return
 		}
+		category_id, err := s.db.getCategoryID(t.Category)
+		if err != nil {
+			log.Printf("%+v", err)
+			b, _ := json.Marshal(NewFailure(err.Error()))
+			http.Error(w, string(b), http.StatusBadRequest)
+			return
+		}
+		user_id, err := s.db.getUserID(t.User)
+		if err != nil {
+			log.Printf("%+v", err)
+			b, _ := json.Marshal(NewFailure(err.Error()))
+			http.Error(w, string(b), http.StatusBadRequest)
+			return
+		}
 		_, err = s.db.db.Exec(
 			`INSERT INTO tranx (cost, store, info, date, category_id, user_id) VALUES ($1, $2, $3, $4, $5, $6)`,
 			t.Cost,
 			t.Store,
 			t.Info,
 			time.Now(),
-			1,
-			1,
+			category_id,
+			user_id,
 		)
 		if err != nil {
 			log.Printf("%+v", err)
@@ -238,7 +251,6 @@ func (s *Server) tranx(w http.ResponseWriter, req *http.Request) {
 			http.Error(w, string(b), http.StatusBadRequest)
 			return
 		}
-		fmt.Println(t)
 		// TODO need to find better way to delete tranx
 		_, err = s.db.db.Exec("DELETE FROM tranx WHERE store = $1 AND cost = $2", t.Store, t.Cost)
 		if err != nil {
