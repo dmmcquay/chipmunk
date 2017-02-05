@@ -5,8 +5,9 @@ import "fmt"
 var authEmails []string = []string{"derekmcquay@gmail.com", "colleenmmcquay@gmail.com"}
 
 type user struct {
-	Info  userInfo `json:"info"`
-	admin bool     `json:"admin"`
+	ID    int    `json:"id"`
+	Email string `json:"email"`
+	Admin bool   `json:"admin"`
 }
 
 type userInfo struct {
@@ -35,23 +36,9 @@ func authorizedEmail(e string) bool {
 // error that it could not find that user
 func getUser(e string) (int, error) {
 	for i, u := range users {
-		if e == u.Info.Email {
+		if e == u.Email {
 			return i, nil
 		}
 	}
 	return 0, fmt.Errorf("could not find user")
-}
-
-//addUser adds user to slice of users
-func addUser(u userInfo) {
-	_, err := getUser(u.Email)
-	if err != nil {
-		users = append(
-			users,
-			user{
-				Info:  u,
-				admin: true,
-			},
-		)
-	}
 }
