@@ -35,4 +35,8 @@ INSERT INTO categories (name, budget) VALUES
     ('Restaurant', 200),
     ('Misc', 100)
 ;
+
+INSERT INTO users (email, admin) VALUES
+    ('derekmcquay@gmail.com', true)
+;
 `
