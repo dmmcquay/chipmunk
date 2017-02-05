@@ -23,6 +23,7 @@ func addRoutes(sm *http.ServeMux, server *Server, staticFiles string) {
 		"auth":      "/api/v0/auth/",
 		"health":    "/healthz",
 		"list":      "/api/v0/list/",
+		"category":  "/api/v0/category/",
 		"tranx":     "/api/v0/tranx/",
 		"cost":      "/api/v0/costpermonth/",
 
@@ -72,6 +73,7 @@ func addRoutes(sm *http.ServeMux, server *Server, staticFiles string) {
 	//sm.HandleFunc(prefix["list"], server.listUsers)
 	//sm.HandleFunc(prefix["tranx"], server.tranx)
 	//sm.HandleFunc(prefix["cost"], server.costPerMonth)
+	sm.HandleFunc(prefix["category"], server.category)
 	sm.HandleFunc(prefix["protected"], server.plist)
 	sm.HandleFunc(prefix["info"], server.serverInfo)
 	sm.HandleFunc(prefix["login"], server.login)

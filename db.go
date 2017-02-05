@@ -37,6 +37,23 @@ func (d *DB) initializeDB() {
 	d.db.Exec(primeCategories)
 }
 
+func (d *DB) getCategories() ([]category, error) {
+	results := []category{}
+	rows, err := d.db.Queryx("SELECT id, name, budget FROM categories")
+	if err != nil {
+		return nil, err
+	}
+	for rows.Next() {
+		var result category
+		err := rows.StructScan(&result)
+		if err != nil {
+			return nil, err
+		}
+		results = append(results, result)
+	}
+	return results, nil
+}
+
 //func (d *DB) checkOwner(filename, client string) error {
 //	row := d.db.QueryRowx("SELECT client FROM pics WHERE filename = $1", filename)
 //	var owner string
@@ -175,22 +192,6 @@ func (d *DB) initializeDB() {
 //	Name string `json:"name"db:"name"`
 //}
 //
-//func (d *DB) getCategories() (map[string]int, error) {
-//	results := map[string]int{}
-//	rows, err := d.db.Queryx("SELECT id, name FROM categories")
-//	if err != nil {
-//		return nil, err
-//	}
-//	for rows.Next() {
-//		var result Category
-//		err := rows.StructScan(&result)
-//		if err != nil {
-//			return nil, err
-//		}
-//		results[result.Name] = result.Id
-//	}
-//	return results, nil
-//}
 //
 //func (d *DB) flagPic(filename string, reporter string) (int, error) {
 //	logs.Debug("(%s, %s)", filename, reporter)
