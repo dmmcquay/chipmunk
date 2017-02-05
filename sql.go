@@ -3,7 +3,7 @@ package chipmunk
 const createdb = `
 CREATE TABLE IF NOT EXISTS
 users (
-    id uuid PRIMARY KEY,
+    id SERIAL PRIMARY KEY,
     email varchar(64) UNIQUE,
     admin boolean DEFAULT false
 );
@@ -18,9 +18,11 @@ CREATE TABLE IF NOT EXISTS
 tranx (
     id SERIAL PRIMARY KEY,
 	cost numeric DEFAULT 0,
-    store varchar(64) UNIQUE,
-    info varchar(1024) UNIQUE,
-    user uuid
+    store varchar(64),
+    info varchar(1024),
+	category_id integer references categories(id) DEFAULT 0, 
+	date timestamp DEFAULT CURRENT_TIMESTAMP,
+	user_id integer references users(id) DEFAULT 0
 );
 `
 

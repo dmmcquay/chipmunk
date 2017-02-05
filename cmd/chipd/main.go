@@ -42,7 +42,7 @@ func main() {
 		Run: func(cmd *cobra.Command, args []string) {
 			config := &Config{
 				DBHost: "localhost",
-				DBName: "postgres",
+				DBName: "dmcquay",
 			}
 			err := envconfig.Process("chipd", config)
 			if err != nil {
