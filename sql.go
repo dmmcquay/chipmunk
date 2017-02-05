@@ -11,7 +11,8 @@ users (
 CREATE TABLE IF NOT EXISTS
 categories (
     id SERIAL PRIMARY KEY,
-    name varchar(1024) UNIQUE
+    name varchar(1024) UNIQUE,
+	budget numeric DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS
@@ -27,11 +28,11 @@ tranx (
 `
 
 const primeCategories = `
-INSERT INTO categories (name) VALUES
-    ('Derek'),
-    ('Colleen'),
-    ('Groceries'),
-    ('Restaurant'),
-    ('Misc')
+INSERT INTO categories (name, budget) VALUES
+    ('Derek', 100),
+    ('Colleen', 100),
+    ('Groceries', 200),
+    ('Restaurant', 200),
+    ('Misc', 100)
 ;
 `
