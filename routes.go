@@ -22,10 +22,9 @@ func addRoutes(sm *http.ServeMux, server *Server, staticFiles string) {
 		"oauth":     "/api/v0/oauth_cb/",
 		"auth":      "/api/v0/auth/",
 		"health":    "/healthz",
-		"list":      "/api/v0/list/",
 		"category":  "/api/v0/category/",
 		"tranx":     "/api/v0/tranx/",
-		"cost":      "/api/v0/costpermonth/",
+		"user":      "/api/v0/user/",
 
 		"fake": "/fake/",
 	}
@@ -70,16 +69,15 @@ func addRoutes(sm *http.ServeMux, server *Server, staticFiles string) {
 	}
 
 	store = sessions.NewCookieStore([]byte(server.cookieSecret))
-	//sm.HandleFunc(prefix["list"], server.listUsers)
 	//sm.HandleFunc(prefix["tranx"], server.tranx)
-	//sm.HandleFunc(prefix["cost"], server.costPerMonth)
+	sm.HandleFunc(prefix["fake"], server.fakeSetup)
 	sm.HandleFunc(prefix["category"], server.category)
+	sm.HandleFunc(prefix["user"], server.user)
 	sm.HandleFunc(prefix["protected"], server.plist)
 	sm.HandleFunc(prefix["info"], server.serverInfo)
 	sm.HandleFunc(prefix["login"], server.login)
 	sm.HandleFunc(prefix["logout"], server.logout)
 	sm.HandleFunc(prefix["oauth"], server.oauthCallback)
 	sm.HandleFunc(prefix["auth"], server.auth)
-	sm.HandleFunc(prefix["fake"], server.fakeSetup)
 	sm.HandleFunc(prefix["health"], server.health)
 }

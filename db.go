@@ -54,6 +54,36 @@ func (d *DB) getCategories() ([]category, error) {
 	return results, nil
 }
 
+func (d *DB) getUsers() ([]user, error) {
+	results := []user{}
+	rows, err := d.db.Queryx("SELECT id, email, admin FROM users")
+	if err != nil {
+		return nil, err
+	}
+	for rows.Next() {
+		var result user
+		err := rows.StructScan(&result)
+		if err != nil {
+			return nil, err
+		}
+		results = append(results, result)
+	}
+	return results, nil
+}
+
+func (d *DB) adminUser(e string) bool {
+	result := user{}
+	row := d.db.QueryRow("SELECT admin FROM users WHERE email = $1",
+		e,
+	)
+	err := row.Scan(&result)
+	if err != nil {
+		return false
+	}
+
+	return result.Admin
+}
+
 //func (d *DB) checkOwner(filename, client string) error {
 //	row := d.db.QueryRowx("SELECT client FROM pics WHERE filename = $1", filename)
 //	var owner string

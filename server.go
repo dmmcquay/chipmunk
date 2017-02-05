@@ -77,10 +77,10 @@ func NewServer(sm *http.ServeMux, clientId, clientSecret, cookieSecret, dbhost, 
 }
 
 func (s *Server) fakeSetup(w http.ResponseWriter, r *http.Request) {
-	u := userInfo{
-		Email: "derekmcquay@gmail.com",
-	}
-	addUser(u)
+	//u := userInfo{
+	//	Email: "derekmcquay@gmail.com",
+	//}
+	//addUser(u)
 }
 
 //func (s *Server) tranx(w http.ResponseWriter, r *http.Request) {
@@ -265,7 +265,8 @@ func (s *Server) oauthCallback(w http.ResponseWriter, r *http.Request) {
 		if err := session.Save(r, w); err != nil {
 			http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 		}
-		addUser(u)
+		// TODO add psql user here
+		//addUser(u)
 		http.Redirect(w, r, "/static/", http.StatusTemporaryRedirect)
 		return
 	}
