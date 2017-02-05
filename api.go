@@ -69,12 +69,6 @@ func (s *Server) category(w http.ResponseWriter, req *http.Request) {
 			http.Error(w, string(b), http.StatusInternalServerError)
 			return
 		}
-		if err != nil {
-			log.Printf("%+v", err)
-			b, _ := json.Marshal(NewFailure(err.Error()))
-			http.Error(w, string(b), http.StatusBadRequest)
-			return
-		}
 	}
 }
 
@@ -177,12 +171,6 @@ func (s *Server) user(w http.ResponseWriter, req *http.Request) {
 			log.Printf("%+v", err)
 			b, _ := json.Marshal(NewFailure(err.Error()))
 			http.Error(w, string(b), http.StatusInternalServerError)
-			return
-		}
-		if err != nil {
-			log.Printf("%+v", err)
-			b, _ := json.Marshal(NewFailure(err.Error()))
-			http.Error(w, string(b), http.StatusBadRequest)
 			return
 		}
 	}
