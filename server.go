@@ -179,33 +179,7 @@ func (s *Server) fakeSetup(w http.ResponseWriter, r *http.Request) {
 //		}
 //	}
 //}
-//
-//func (s *Server) listUsers(w http.ResponseWriter, r *http.Request) {
-//	//TODO add back in oauth
-//	//w.Header().Set("Content-Type", "application/json")
-//	//session, err := store.Get(r, "creds")
-//	//if err != nil {
-//	//	http.Error(w, err.Error(), http.StatusInternalServerError)
-//	//	return
-//	//}
-//	//if loggedIn := session.Values["authenticated"]; loggedIn != true {
-//	//	http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
-//	//	return
-//	//}
-//	switch r.Method {
-//	default:
-//		b, _ := json.Marshal(NewFailure("Allowed method: GET"))
-//		http.Error(w, string(b), http.StatusBadRequest)
-//		return
-//	case "GET":
-//		err := json.NewEncoder(w).Encode(users)
-//		if err != nil {
-//			http.Error(w, err.Error(), http.StatusInternalServerError)
-//			return
-//		}
-//	}
-//}
-//
+
 func (s *Server) login(w http.ResponseWriter, r *http.Request) {
 	session, _ := store.Get(r, "creds")
 	if loggedIn := session.Values["authenticated"]; loggedIn == true {
