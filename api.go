@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -195,14 +196,32 @@ func (s *Server) tranx(w http.ResponseWriter, req *http.Request) {
 		http.Error(w, string(b), http.StatusBadRequest)
 		return
 	case "GET":
-		tranxs, err := s.db.getTranxs()
+		searchreq := req.URL.Path[len(prefix["tranx"]):]
+		if len(searchreq) == 0 {
+			tranxs, err := s.db.getTranxs()
+			if err != nil {
+				log.Printf("%+v", err)
+				b, _ := json.Marshal(NewFailure(err.Error()))
+				http.Error(w, string(b), http.StatusInternalServerError)
+				return
+			}
+			json.NewEncoder(w).Encode(tranxs)
+			return
+		}
+		if searchreq[len(searchreq)-1] != '/' {
+			http.Redirect(w, req, prefix["tranx"]+searchreq+"/", http.StatusMovedPermanently)
+			return
+		}
+		searchReqParsed := strings.Split(searchreq, "/")
+		t, err := s.db.getTranx(searchReqParsed[0])
 		if err != nil {
 			log.Printf("%+v", err)
 			b, _ := json.Marshal(NewFailure(err.Error()))
-			http.Error(w, string(b), http.StatusInternalServerError)
+			http.Error(w, string(b), http.StatusBadRequest)
 			return
 		}
-		json.NewEncoder(w).Encode(tranxs)
+		json.NewEncoder(w).Encode(t)
+
 	case "POST":
 		t := tranx{}
 		err := json.NewDecoder(req.Body).Decode(&t)

@@ -127,6 +127,27 @@ func (d *DB) getTranxs() ([]tranx, error) {
 	return results, nil
 }
 
+func (d *DB) getTranx(i string) (tranx, error) {
+	result := tranx{}
+	row := d.db.QueryRow("SELECT id, cost, store, info, date, user_id, category_id FROM tranx WHERE id = $1",
+		i,
+	)
+	err := row.Scan(
+		&result.ID,
+		&result.Cost,
+		&result.Store,
+		&result.Info,
+		&result.Date,
+		&result.User_ID,
+		&result.Category_ID,
+	)
+	if err != nil {
+		return tranx{}, err
+	}
+
+	return result, nil
+}
+
 //func (d *DB) checkOwner(filename, client string) error {
 //	row := d.db.QueryRowx("SELECT client FROM pics WHERE filename = $1", filename)
 //	var owner string
