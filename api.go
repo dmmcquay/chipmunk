@@ -2,6 +2,7 @@ package chipmunk
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"strings"
@@ -192,7 +193,7 @@ func (s *Server) tranx(w http.ResponseWriter, req *http.Request) {
 	//}
 	switch req.Method {
 	default:
-		b, _ := json.Marshal(NewFailure("Allowed methods: GET, POST, DELETE"))
+		b, _ := json.Marshal(NewFailure("Allowed methods: GET, POST, PATCH, DELETE"))
 		http.Error(w, string(b), http.StatusBadRequest)
 		return
 	case "GET":
@@ -220,8 +221,95 @@ func (s *Server) tranx(w http.ResponseWriter, req *http.Request) {
 			http.Error(w, string(b), http.StatusBadRequest)
 			return
 		}
+		t.User, err = s.db.getUserEmailByID(t.User_ID)
+		if err != nil {
+			log.Printf("%+v", err)
+			b, _ := json.Marshal(NewFailure(err.Error()))
+			http.Error(w, string(b), http.StatusBadRequest)
+			return
+		}
+		t.Category, err = s.db.getCategoryNameByID(t.Category_ID)
+		if err != nil {
+			log.Printf("%+v", err)
+			b, _ := json.Marshal(NewFailure(err.Error()))
+			http.Error(w, string(b), http.StatusBadRequest)
+			return
+		}
 		json.NewEncoder(w).Encode(t)
+	case "PUT":
+		searchreq := req.URL.Path[len(prefix["tranx"]):]
+		if len(searchreq) == 0 {
+			b, _ := json.Marshal(NewFailure(fmt.Sprint("invalid url path")))
+			http.Error(w, string(b), http.StatusBadRequest)
+			return
+		}
+		if searchreq[len(searchreq)-1] != '/' {
+			http.Redirect(w, req, prefix["tranx"]+searchreq+"/", http.StatusMovedPermanently)
+			return
+		}
+		err := req.ParseForm()
+		if err != nil {
+			log.Printf("%+v", err)
+			b, _ := json.Marshal(NewFailure(err.Error()))
+			http.Error(w, string(b), http.StatusBadRequest)
+			return
+		}
 
+		f := map[string]string{}
+		if req.Form("ID") != "" {
+			f["ID"] = req.Form("ID")
+		}
+		if req.Form("Cost") != "" {
+			f["Cost"] = req.Form("Cost")
+		}
+		if req.Form("Store") != "" {
+			f["Store"] = req.Form("Store")
+		}
+		if req.Form("Info") != "" {
+			f["Info"] = req.Form("Info")
+		}
+		if req.Form("Date") != "" {
+			f["Date"] = req.Form("Date")
+		}
+		if req.Form("User") != "" {
+			f["User"] = req.Form("User")
+		}
+		if req.Form("Category") != "" {
+			f["Category"] = req.Form("Category")
+		}
+
+		searchReqParsed := strings.Split(searchreq, "/")
+		old, err := s.db.getTranx(searchReqParsed[0])
+		if err != nil {
+			log.Printf("%+v", err)
+			b, _ := json.Marshal(NewFailure(err.Error()))
+			http.Error(w, string(b), http.StatusBadRequest)
+			return
+		}
+		old.User, err = s.db.getUserEmailByID(t.User_ID)
+		if err != nil {
+			log.Printf("%+v", err)
+			b, _ := json.Marshal(NewFailure(err.Error()))
+			http.Error(w, string(b), http.StatusBadRequest)
+			return
+		}
+		old.Category, err = s.db.getCategoryNameByID(t.Category_ID)
+		if err != nil {
+			log.Printf("%+v", err)
+			b, _ := json.Marshal(NewFailure(err.Error()))
+			http.Error(w, string(b), http.StatusBadRequest)
+			return
+		}
+		in := tranx{}
+		err := json.NewDecoder(req.Body).Decode(&in)
+		req.Body.Close()
+		if err != nil {
+			log.Printf("%+v", err)
+			b, _ := json.Marshal(NewFailure(err.Error()))
+			http.Error(w, string(b), http.StatusBadRequest)
+			return
+		}
+		json.NewEncoder(w).Encode(t)
 	case "POST":
 		t := tranx{}
 		err := json.NewDecoder(req.Body).Decode(&t)

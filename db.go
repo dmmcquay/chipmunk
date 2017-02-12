@@ -67,6 +67,32 @@ func (d *DB) getCategoryID(c string) (int, error) {
 	return result, nil
 }
 
+func (d *DB) getCategoryNameByID(id int) (string, error) {
+	name := ""
+	row := d.db.QueryRow("SELECT name FROM categories WHERE id = $1",
+		id,
+	)
+	err := row.Scan(&name)
+	if err != nil {
+		return name, err
+	}
+
+	return name, nil
+}
+
+func (d *DB) getUserEmailByID(id int) (string, error) {
+	email := ""
+	row := d.db.QueryRow("SELECT email FROM users WHERE id = $1",
+		id,
+	)
+	err := row.Scan(&email)
+	if err != nil {
+		return email, err
+	}
+
+	return email, nil
+}
+
 func (d *DB) getUsers() ([]user, error) {
 	results := []user{}
 	rows, err := d.db.Queryx("SELECT id, email, admin FROM users")
